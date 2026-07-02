@@ -12,3 +12,7 @@ build-*
 doc/html/
 doc/latex/
 doc/xml/
+
+# Apple xcframework build outputs
+/build_xcframework/
+/xcframework/
