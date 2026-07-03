@@ -174,7 +174,11 @@ def prune_unused_gimbal_headers(hdir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--platforms", nargs="+", default=["ios", "ios-simulator"],
+    # Default to ALL platforms: main() wipes OUT and rebuilds only the passed
+    # platforms, so a plain run with a subset silently DROPS the others (dropping
+    # tvos/watchos slices is a recurring footgun). Slices are cached under BUILD/,
+    # so re-running is incremental. Pass --platforms explicitly to build a subset.
+    ap.add_argument("--platforms", nargs="+", default=list(PLATFORMS),
                     choices=list(PLATFORMS))
     args = ap.parse_args()
 
