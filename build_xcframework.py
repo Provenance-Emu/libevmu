@@ -31,6 +31,19 @@ PLATFORMS = {
     "watchos-simulator": ("watchOS", "watchsimulator"),
 }
 
+# Per-platform overrides. Default arch is arm64 (iOS/tvOS device + Apple-Silicon
+# simulators). watchOS device is the exception: Series 4-8 are arm64_32 (ILP32-on-
+# arm64), S9+/Ultra are arm64 — Apple ships a multi-arch device slice. watchOS also
+# has its own OS-version line, independent of the iOS/tvOS DEPLOY above.
+SLICE_ARCH = {
+    "watchos":           "arm64_32;arm64",
+    "watchos-simulator": "arm64",
+}
+SLICE_DEPLOY = {
+    "watchos":           "10.0",
+    "watchos-simulator": "10.0",
+}
+
 # The 5 static archives CMake emits (basename patterns, searched recursively).
 ARCHIVES = ["liblibLibElysianVMU.a", "liblibGimbal.a",
             "libTinyRegexC.a", "libtinycthread.a", "liblz4.a"]
@@ -69,12 +82,14 @@ def run(cmd, **kw):
 
 def build_slice(platform):
     system, sysroot = PLATFORMS[platform]
+    arch = SLICE_ARCH.get(platform, "arm64")
+    deploy = SLICE_DEPLOY.get(platform, DEPLOY)
     bdir = os.path.join(BUILD, platform)
     run(["cmake", "-S", ROOT, "-B", bdir, "-GXcode",
          f"-DCMAKE_SYSTEM_NAME={system}",
          f"-DCMAKE_OSX_SYSROOT={sysroot}",
-         "-DCMAKE_OSX_ARCHITECTURES=arm64",
-         f"-DCMAKE_OSX_DEPLOYMENT_TARGET={DEPLOY}",
+         f"-DCMAKE_OSX_ARCHITECTURES={arch}",
+         f"-DCMAKE_OSX_DEPLOYMENT_TARGET={deploy}",
          "-DEVMU_ENABLE_TESTS=OFF", "-DGBL_ENABLE_TESTS=OFF"])
     run(["cmake", "--build", bdir, "--target", "libLibElysianVMU",
          "--config", "Release", "--", "-quiet"])
