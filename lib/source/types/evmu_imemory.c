@@ -103,7 +103,14 @@ static EVMU_RESULT EvmuIMemory_write_(EvmuIMemory* pSelf,
                                       const void*  pData,
                                       size_t*      pBytes)
 {
-    GblObject_setProperty(GBL_OBJECT(pSelf), "dataChanged", GBL_TRUE);
+    // NOTE: the "dataChanged" property set was removed here. It ran on EVERY memory
+    // write (the hottest path), and on EvmuWram/EvmuFileManager the OVERRIDE'd
+    // property resolves without the WRITE flag, so each write logged
+    // "[GblObject] Tried to get unwritable property: [...::dataChanged]" at ERROR
+    // level — a per-write string-property lookup + log-format that floods the console
+    // and costs real time once the VMU runs at full speed. Nothing reads the
+    // `dataChanged` property (verified across libevmu); observers use the "dataChange"
+    // signal emitted just below, which is the actual, working notification.
     GBL_EMIT(pSelf, "dataChange", base, *pBytes, pData);
     return GBL_RESULT_SUCCESS;
 }
