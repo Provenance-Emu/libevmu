@@ -15,10 +15,12 @@ EVMU_EXPORT EvmuAddress EvmuRam_indirectAddress(const EvmuRam* pSelf, size_t mod
     GBL_CTX_BEGIN(pSelf);
 
     GBL_CTX_VERIFY(mode <= 3, GBL_RESULT_ERROR_OUT_OF_RANGE, "Invalid indirection mode: [%x]", mode);
-    value = (EvmuRam_readData(pSelf,
-                mode |
+    // `mode` is a size_t param but is verified <= 3 above, so every narrowing
+    // here is to a value that fits an 8-bit RAM address.
+    const EvmuAddress bankBits = (EvmuAddress)
                 ((EvmuRam_viewData(pSelf, EVMU_ADDRESS_SFR_PSW) &
-                  (EVMU_SFR_PSW_IRBK0_MASK|EVMU_SFR_PSW_IRBK1_MASK)) >> 0x1u)) //Bits 2-3 come from PSW
+                  (EVMU_SFR_PSW_IRBK0_MASK|EVMU_SFR_PSW_IRBK1_MASK)) >> 0x1u); //Bits 2-3 come from PSW
+    value = (EvmuAddress)(EvmuRam_readData(pSelf, (EvmuAddress)mode | bankBits)
    | (mode&0x2)<<0x7u); //MSB of pointer is bit 1 from instruction
 
     GBL_CTX_END_BLOCK();
@@ -648,7 +650,7 @@ static EVMU_RESULT EvmuRam_IMemory_readBytes_(const EvmuIMemory* pSelf,
     for(size_t b = 0; b < *pBytes; ++b)
         ((uint8_t*)pBuffer)[b] =
                 EvmuRam_viewData(EVMU_RAM(pSelf),
-                                    address + b);
+                                    (EvmuAddress)(address + b));
 
     GBL_CTX_END();
 }
@@ -663,7 +665,7 @@ static EVMU_RESULT EvmuRam_IMemory_writeBytes_(EvmuIMemory* pSelf,
 
     for(size_t b = 0; b < *pBytes; ++b)
         EvmuRam_writeData(EVMU_RAM(pSelf),
-                          address + b,
+                          (EvmuAddress)(address + b),
                           ((uint8_t*)pBuffer)[b]);
 
 

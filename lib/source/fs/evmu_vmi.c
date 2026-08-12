@@ -230,7 +230,7 @@ EVMU_EXPORT EVMU_RESULT EvmuVmi_fromVmsFile(EvmuVmi*    pSelf,
 
     pSelf->fileNumber = 1;
     pSelf->vmiVersion = EVMU_VMI_VERSION;
-    pSelf->fileSize   = bytes;
+    pSelf->fileSize   = (uint32_t)bytes;
     pSelf->fileMode   = fileType == EVMU_FILE_TYPE_GAME? EVMU_VMI_GAME_MASK : 0;
     pSelf->checksum   = EvmuVmi_computeChecksum(pSelf);
 
@@ -299,8 +299,8 @@ EVMU_EXPORT EVMU_RESULT EvmuVmi_fromDirEntry(EvmuVmi*           pSelf,
 
     // Set file size
     pSelf->fileSize = (pDirEntry->fileType == EVMU_FILE_TYPE_DATA)?
-                          EvmuVms_headerBytes(pVms) + pVms->dataBytes :
-                          pDirEntry->fileSize * EvmuFat_blockSize(pFat);
+                          (uint32_t)(EvmuVms_headerBytes(pVms) + pVms->dataBytes) :
+                          (uint32_t)(pDirEntry->fileSize * EvmuFat_blockSize(pFat));
 
     // Set checkshum
     pSelf->checksum = EvmuVmi_computeChecksum(pSelf);

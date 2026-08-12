@@ -144,7 +144,8 @@ EVMU_EXPORT void EvmuLcd_setPixel(EvmuLcd* pSelf, size_t x, size_t y, GblBool on
 
     int addr;
     unsigned bank, bit;
-    xramBitFromRowCol_(x, y, &bank, &addr, &bit);
+    // Narrowing is safe: both coords are bounded by the assert above.
+    xramBitFromRowCol_((int)x, (int)y, &bank, &addr, &bit);
     addr -= 0x180;
 
     const GblBool wasOn = (pSelf_->pRam->xram[bank][addr] & (0x1 << bit)) != 0;
@@ -167,7 +168,8 @@ EVMU_EXPORT GblBool EvmuLcd_pixel(const EvmuLcd* pSelf, size_t x, size_t y) {
     unsigned bank, bit;
     int addr;
 
-    xramBitFromRowCol_(x, y, &bank, &addr, &bit);
+    // Narrowing is safe: both coords are bounded by the assert above.
+    xramBitFromRowCol_((int)x, (int)y, &bank, &addr, &bit);
     addr -= 0x180;
 
     return ((pSelf_->pRam->xram[bank][addr]>>bit)&0x1);
@@ -386,7 +388,7 @@ static GBL_RESULT EvmuLcd_GblObject_property_(const GblObject* pObject, const Gb
         GblVariant_setBool(pValue, EvmuLcd_refreshEnabled(pSelf));
         break;
     case EvmuLcd_Property_Id_refreshRate:
-        GblVariant_setEnum(pValue, EvmuLcd_refreshRate(pSelf), GBL_ENUM_TYPE);
+        GblVariant_setEnum(pValue, GBL_ENUM_TYPE, EvmuLcd_refreshRate(pSelf));
         break;
     case EvmuLcd_Property_Id_ghostingEnabled:
         GblVariant_setBool(pValue, pSelf->ghostingEnabled);
@@ -398,7 +400,7 @@ static GBL_RESULT EvmuLcd_GblObject_property_(const GblObject* pObject, const Gb
         GblVariant_setBool(pValue, pSelf->invertColors);
         break;
     case EvmuLcd_Property_Id_icons:
-        GblVariant_setFlags(pValue, EvmuLcd_icons(pSelf), GBL_FLAGS_TYPE);
+        GblVariant_setFlags(pValue, GBL_FLAGS_TYPE, EvmuLcd_icons(pSelf));
         break;
     default:
         return GBL_RESULT_ERROR_INVALID_PROPERTY;

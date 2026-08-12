@@ -160,7 +160,7 @@ public:
     uint8_t _getByte(size_t address) const {
         size_t addr = getFlashAddrFromFileOffset(address);
         if(addr < getSize()) {
-            return _dev.readFlashByte(addr);
+            return _dev.readFlashByte((uint32_t)addr);
         } return 0;
     }
 
@@ -178,7 +178,7 @@ public:
     bool _setByte(size_t address, uint8_t value) {
         size_t addr = getFlashAddrFromFileOffset(address);
         if(addr < getSize()) {
-            return _dev.writeFlashByte(addr, value);
+            return _dev.writeFlashByte((uint32_t)addr, value);
         } return false;
     }
 
@@ -333,7 +333,7 @@ inline int VmuDevice::getDisplayPixelGhostValue(unsigned x, unsigned y) const {
 }
 
 inline unsigned	VmuDevice::getFlashFileCount(void) const {
-    return EvmuFileManager_count(pDev_->pFileMgr);
+    return (unsigned)EvmuFileManager_count(pDev_->pFileMgr);
 }
 
 inline VmuFlashDirEntry VmuDevice::getGameFlashDirEntry(void) const {

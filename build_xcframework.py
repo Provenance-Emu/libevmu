@@ -102,7 +102,13 @@ def build_slice(platform):
             sys.exit(f"error: {name} not found under {bdir}")
         libs.append(sorted(hits, key=len)[0])
     merged = os.path.join(BUILD, f"libLibEVMU-{platform}.a")
-    run(["libtool", "-static", "-o", merged] + libs)
+    # -no_warning_for_no_symbols: several translation units are legitimately
+    # empty (evmu_icondata.c is entirely #if 0'd, gyro_vmu_pso_img.c is a lone
+    # #include, libGimbal has two more). This silences the merge step's copy of
+    # the "has no symbols" warning. Xcode's own per-target archive step still
+    # emits it and does NOT honour CMAKE_XCODE_ATTRIBUTE_OTHER_LIBTOOLFLAGS
+    # (verified: the setting lands in the pbxproj and changes nothing).
+    run(["libtool", "-static", "-no_warning_for_no_symbols", "-o", merged] + libs)
     return merged
 
 

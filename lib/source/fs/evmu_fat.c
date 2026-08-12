@@ -119,8 +119,9 @@ EVMU_EXPORT size_t EvmuFat_capacity(const EvmuFat* pSelf) {
 EVMU_EXPORT size_t EvmuFat_toBlocks(const EvmuFat* pSelf, size_t bytes) {
     GBL_UNUSED(pSelf);
 
-    const div_t result = div(bytes, EvmuFat_blockSize(pSelf));
-    return result.quot + (result.rem? 1 : 0);
+    // div() is int-only, which truncated both operands; do the divide in size_t.
+    const size_t blockSize = EvmuFat_blockSize(pSelf);
+    return bytes / blockSize + (bytes % blockSize? 1 : 0);
 }
 
 EVMU_EXPORT size_t EvmuFat_seqFreeBlocks(const EvmuFat* pSelf) {
@@ -359,7 +360,7 @@ EVMU_EXPORT EVMU_RESULT EvmuFat_blockLink(const EvmuFat* pSelf, EvmuBlock block,
                    block, next);
 
     const EvmuBlock tableBlock = EvmuFat_blockTable(pSelf);
-    EvmuBlock*      pFatTable  = EvmuFat_blockData(pSelf, tableBlock);
+    EvmuBlock*      pFatTable  = (EvmuBlock*)EvmuFat_blockData(pSelf, tableBlock);
 
     GBL_CTX_VERIFY(pFatTable,
                    EVMU_RESULT_ERROR_INVALID_BLOCK,
@@ -390,10 +391,10 @@ EVMU_EXPORT EvmuBlock EvmuFat_blockAlloc(const EvmuFat* pSelf, EvmuBlock prev, E
     // Determine loop boundaries and direction based on file type
     if(type == EVMU_FILE_TYPE_GAME) {
         firstBlock  = 0;
-        endBlock    = EvmuFat_userBlocks(pSelf);
+        endBlock    = (int)EvmuFat_userBlocks(pSelf);
         blockDelta  = 1;
     } else if(type == EVMU_FILE_TYPE_DATA) {
-        firstBlock  = EvmuFat_userBlocks(pSelf) - 1;
+        firstBlock  = (int)EvmuFat_userBlocks(pSelf) - 1;
         endBlock    = -1;
         blockDelta  = -1;
     } else GBL_CTX_VERIFY(GBL_FALSE,
@@ -435,13 +436,13 @@ EVMU_EXPORT size_t EvmuFat_dirEntryCount(const EvmuFat* pSelf) {
 EVMU_EXPORT EvmuDirEntry* EvmuFat_dirEntry(const EvmuFat* pSelf, size_t index) {
     const EvmuRootBlock*  pRoot    = EvmuFat_root(pSelf);
     const EvmuBlock       dirBlock = pRoot->dirBlock - pRoot->dirSize + 1;
-    EvmuDirEntry*         pEntry   = EvmuFat_blockData(pSelf, dirBlock);
+    EvmuDirEntry*         pEntry   = (EvmuDirEntry*)EvmuFat_blockData(pSelf, dirBlock);
 
     return index < EvmuFat_dirEntryCount(pSelf)? &pEntry[index] : NULL;
 }
 
 EVMU_EXPORT EvmuDirEntry* EvmuFat_dirEntryAlloc(const EvmuFat* pSelf, EVMU_FILE_TYPE fileType) {
-    for(int e = EvmuFat_dirEntryCount(pSelf) - 1; e >= 0; --e) {
+    for(int e = (int)EvmuFat_dirEntryCount(pSelf) - 1; e >= 0; --e) {
         EvmuDirEntry* pEntry = EvmuFat_dirEntry(pSelf, e);
 
         if(pEntry && pEntry->fileType == EVMU_FILE_TYPE_NONE) {

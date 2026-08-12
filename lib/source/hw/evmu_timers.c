@@ -240,7 +240,7 @@ static void EvmuTimers_updateTimer0_(EvmuTimers* pSelf) {
     EvmuRam_* pRam = pSelf_->pRam;
     EvmuDevice*  pDevice = EvmuPeripheral_device(EVMU_PERIPHERAL(pSelf));
 
-    int cy = EvmuCpu_cycles(pDevice->pCpu);
+    int cy = (int)EvmuCpu_cycles(pDevice->pCpu);
 
     /* Timer 0 */
     //T0H overflow or interrupts enabled

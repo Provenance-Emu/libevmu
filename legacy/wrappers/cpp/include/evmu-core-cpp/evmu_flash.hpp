@@ -272,7 +272,7 @@ inline void	VmuFlashDirEntry::fixCrc(void) const {
 }
 
 inline unsigned VmuFlashDirEntry::getFileIndex(void) const {
-    return EvmuFat_dirEntryIndex(_dev->pFat, _dirEntry);
+    return (unsigned)EvmuFat_dirEntryIndex(_dev->pFat, _dirEntry);
 }
 
 inline bool VmuFlashDirEntry::deleteFile(void) {

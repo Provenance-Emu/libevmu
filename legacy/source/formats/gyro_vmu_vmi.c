@@ -84,7 +84,7 @@ void gyVmuVmiGenerateFromVms(VMIFileInfo* vmi, const VMSFileInfo* vms, size_t vm
     vmi->creationHour       = tm->tm_hour;
     vmi->creationSecond     = tm->tm_sec;
     vmi->creationWeekday    = tm->tm_wday;
-    vmi->fileSize           = /*gyVmuVmsFileInfoHeaderSize(vms) + */ vmsFileSize;
+    vmi->fileSize           = (uint32_t)(/*gyVmuVmsFileInfoHeaderSize(vms) + */ vmsFileSize);
     vmi->checksum           = gblHashCrc16BitPartial((const unsigned char *)vms, vmi->fileSize, NULL);
     gyVmuFlashPrintVMIFileInfo(vmi);
 

@@ -747,7 +747,7 @@ EVMU_EXPORT size_t EvmuFileManager_write(const EvmuFileManager* pSelf,
         const size_t blockOffset = curBlock * blockSize + (b == 0 ? offset % blockSize : 0);
 
         GBL_CTX_CALL(EvmuFlash_writeBytes(pFlash,
-                                          blockOffset,
+                                          (EvmuAddress)blockOffset,
                                           &pBuffer[bytesWritten],
                                           &writeBytes));
 
@@ -901,7 +901,7 @@ static EVMU_RESULT EvmuFileManager_loadFlash_(EvmuFileManager* pSelf, const char
 
         if(retVal == chunkSize) {
             GBL_CTX_VERIFY_CALL(
-                EvmuFlash_writeBytes(pFlash, read, fillBuffer, &retVal)
+                EvmuFlash_writeBytes(pFlash, (EvmuAddress)read, fillBuffer, &retVal)
             );
             read += chunkSize;
         } else {

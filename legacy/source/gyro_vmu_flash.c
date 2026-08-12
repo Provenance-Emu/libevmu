@@ -29,7 +29,8 @@ static char _lastErrorMsg[VMU_FLASH_LOAD_IMAGE_ERROR_MESSAGE_SIZE] = { '\0' };
 static EvmuDirEntry* EvmuFileManager_alloc_(EvmuFileManager* pSelf, const EvmuNewFileInfo* pInfo, const void* pData, VMU_LOAD_IMAGE_STATUS* pStatus) {
     EvmuDirEntry* pEntry = NULL;
     GBL_CTX_BEGIN(NULL);
-    pEntry = EvmuFileManager_alloc(pSelf, pInfo, pData);
+    // alloc() only reads pInfo; the public API just isn't const-correct.
+    pEntry = EvmuFileManager_alloc(pSelf, (EvmuNewFileInfo*)pInfo, pData);
     GBL_CTX_VERIFY_LAST_RECORD();
     GBL_CTX_END_BLOCK();
     if(GBL_RESULT_SUCCESS(GBL_CTX_RESULT()))
@@ -184,7 +185,7 @@ int gyVmuVmiFindVmsPath(const char* vmiPath, char* vmsPath) {
     if(EvmuVmi_load((EvmuVmi*)&vmiHeader, vmiPath)) {
         gyVmuVmiFileInfoResourceNameGet(&vmiHeader, vmsFileName);
 
-        for(int i = strlen(basePath)-1; i >= 0; --i) {
+        for(int i = (int)strlen(basePath)-1; i >= 0; --i) {
             if(basePath[i] == '\\' || basePath[i] == '/') {
                 basePath[i+1] = '\0';
                 break;
@@ -236,7 +237,9 @@ int gyVmuVmsFindVmiPath(const char* vmsPath, char* vmiPath) {
 
     strcat(basePath, ".vmi");
     FILE* fp = fopen(basePath, "rb");
-    int wasOpen = (uintptr_t)fp;
+    // Was `(uintptr_t)fp` truncated to int, which reports "not open" whenever
+    // the low 32 bits of the FILE* happen to be zero.
+    const int wasOpen = (fp != NULL);
     if(fp) fclose(fp);
 
     if(/*!retVal ||*/ !wasOpen) {
@@ -417,9 +420,6 @@ EvmuDirEntry* gyVmuFlashLoadImageDcm(EvmuDevice* dev, const char* path, VMU_LOAD
     //Clear ROM
     memset(pFlash_->pStorage->pData, 0, pFlash_->pStorage->size);
 
-    size_t bytesRead   = 0;
-    size_t bytesTotal  = 0;
-
     size_t fileLen = 0;
     fseek(file, 0, SEEK_END); // seek to end of file
     fileLen = ftell(file); // get current file pointer
@@ -433,17 +433,20 @@ EvmuDirEntry* gyVmuFlashLoadImageDcm(EvmuDevice* dev, const char* path, VMU_LOAD
                       pFlash_->pStorage->size);
     }
 
-    int retVal = fread(pFlash_->pStorage->pData, 1, toRead, file);
+    // bytesRead/bytesTotal were declared, zeroed and never assigned, so this
+    // check compared toRead against a constant 0 and always logged an error on
+    // a perfectly good image. Use fread()'s actual return.
+    const size_t bytesRead = fread(pFlash_->pStorage->pData, 1, toRead, file);
 
-    if(!retVal || toRead != bytesRead) {
-        EVMU_LOG_ERROR("All bytes were not read properly! [Bytes Read: %u/%u]", bytesRead, toRead);
+    if(bytesRead != toRead) {
+        EVMU_LOG_ERROR("All bytes were not read properly! [Bytes Read: %zu/%zu]", bytesRead, toRead);
     }
 
     fclose(file);
 
     EvmuNexus_applyByteOrdering(pFlash_->pStorage->pData, EVMU_FLASH_SIZE);
 
-    EVMU_LOG_VERBOSE("Read %d bytes.", bytesTotal);
+    EVMU_LOG_VERBOSE("Read %zu bytes.", bytesRead);
     //assert(bytesTotal >= 0);
     //assert(bytesTotal == sizeof(pDevice_->pMemory->flash));
 

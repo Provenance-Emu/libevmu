@@ -62,7 +62,7 @@ EVMU_EXPORT EVMU_RESULT EvmuIMemory_fillBytes(EvmuIMemory* pSelf,
 
     size_t byte = 0;
     while(byte < regionSize) {
-        const EvmuAddress chunkAddr = base + byte;
+        const EvmuAddress chunkAddr = (EvmuAddress)(base + byte);
         const size_t      remaining = regionSize - byte;
               size_t      chunkSize = remaining >= dataBytes?
                                       dataBytes : remaining;
