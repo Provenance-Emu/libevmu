@@ -1,3 +1,4 @@
 [submodule "lib/lib/libgimbal"]
 	path = lib/lib/libgimbal
-	url = https://github.com/gyrovorbis/libgimbal.git
+	url = https://github.com/Provenance-Emu/libgimbal.git
+	branch = xcframework
